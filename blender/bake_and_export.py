@@ -162,26 +162,34 @@ for img in bpy.data.images:
     if img.name == bake_image.name or not img.has_data:
         continue
     w, h = img.size
-    if w > MAX_TEXTURE_SIZE or h > MAX_TEXTURE_SIZE:
+    if w <= MAX_TEXTURE_SIZE and h <= MAX_TEXTURE_SIZE:
+        continue
+    was_packed = img.packed_file is not None
+    print(f"  -> {img.name} : {w}x{h}, filepath={img.filepath!r}, empaquetée avant={was_packed}")
+    try:
+        if was_packed:
+            # Le mobilier est importé via import_scene.gltf() : ses textures sont
+            # extraites du .glb/.gltf Poly Haven et peuvent rester "empaquetées"
+            # (packed_file) en interne. Si c'est le cas, reload() relit ce paquet
+            # d'origine au lieu du fichier réduit qu'on vient d'écrire — on dépaquette
+            # donc d'abord pour forcer une seule source de vérité : le fichier disque.
+            img.unpack(method='REMOVE')
         scale = MAX_TEXTURE_SIZE / max(w, h)
         new_w, new_h = max(1, round(w * scale)), max(1, round(h * scale))
         img.scale(new_w, new_h)
-        # scale() + pack() seuls n'ont eu aucun effet sur la taille exportée (les
-        # textures du mobilier pesaient toujours leur taille 2K d'origine dans le
-        # .glb final, vérifié par le diagnostic ci-dessous : 35.1 Mo de textures
-        # malgré une réduction annoncée à 768px). Au lieu de compter sur le choix
-        # interne de l'exportateur entre pixels en mémoire et fichier source, on
-        # écrit explicitement le résultat réduit dans un vrai fichier JPEG et on
-        # repointe l'image dessus : il n'y a alors plus qu'une seule source possible.
         out_path = os.path.join(RESIZED_DIR, f"{img.name}.jpg")
         img.filepath_raw = out_path
         img.file_format = 'JPEG'
         img.save()
         img.source = 'FILE'
         img.reload()
+        on_disk_kb = os.path.getsize(out_path) / 1024
         resized_count += 1
-        print(f"  texture réduite : {img.name} ({w}x{h} -> {img.size[0]}x{img.size[1]}) -> {out_path}")
-print(f"{resized_count} texture(s) réduite(s) et réécrite(s) sur le disque.")
+        print(f"     réduite : {w}x{h} -> {img.size[0]}x{img.size[1]} ; fichier {on_disk_kb:.0f} Ko ; "
+              f"empaquetée après={img.packed_file is not None} ; {out_path}")
+    except Exception as e:
+        print(f"  !! Échec de la réduction de {img.name} : {e}")
+print(f"== {resized_count} texture(s) réduite(s) et réécrite(s) sur le disque. ==")
 
 # ---------------------------------------------------------------- 7) export glTF (Draco + JPEG)
 
