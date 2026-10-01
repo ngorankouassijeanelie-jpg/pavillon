@@ -156,7 +156,10 @@ desired_kwargs = dict(
     export_format="GLB",
     export_draco_mesh_compression_enable=True,
     export_draco_mesh_compression_level=6,
-    export_image_format="WEBP",
+    # AUTO (JPEG/PNG selon la texture d'origine) plutôt que WEBP : le GLTFLoader
+    # de Three.js r128 (version utilisée par pavillon.html) ne sait pas décoder
+    # l'extension EXT_texture_webp et fait échouer tout le chargement du fichier.
+    export_image_format="AUTO",
     export_apply=True,
     use_visible=True,
     export_yup=True,
