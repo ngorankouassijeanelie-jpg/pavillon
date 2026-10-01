@@ -16,7 +16,7 @@ import os
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BLEND_IN = os.path.join(PROJECT_ROOT, "lobby_stage1.blend")
 GLB_OUT = os.path.join(PROJECT_ROOT, "lobby.glb")
-LIGHTMAP_SIZE = 2048  # 4096 restait sous la limite de la consigne mais pesait lourd ; 2048 suffit largement
+LIGHTMAP_SIZE = 1024  # 2048 donnait encore un fichier > 30 Mo ; 1024 reste net à la distance de vue du lobby
 
 bpy.ops.wm.open_mainfile(filepath=BLEND_IN)
 scene = bpy.context.scene
@@ -151,7 +151,7 @@ for cx, cz in ((-13, 9), (13, 9)):
 
 # ---------------------------------------------------------------- 6) réduire les textures pour tenir le budget 25 Mo
 
-MAX_TEXTURE_SIZE = 1024
+MAX_TEXTURE_SIZE = 768  # 1024 ne suffisait pas (fichier > 30 Mo avec le mobilier Poly Haven) ; 768 tient le budget
 for img in bpy.data.images:
     if img.name == bake_image.name or not img.has_data:
         continue
@@ -167,13 +167,16 @@ desired_kwargs = dict(
     filepath=GLB_OUT,
     export_format="GLB",
     export_draco_mesh_compression_enable=True,
-    export_draco_mesh_compression_level=6,
+    export_draco_mesh_compression_level=10,
+    export_draco_position_quantization=12,
+    export_draco_normal_quantization=8,
+    export_draco_texcoord_quantization=10,
     # JPEG plutôt que WEBP : le GLTFLoader de Three.js r128 (version utilisée par
     # pavillon.html) ne sait pas décoder EXT_texture_webp et fait échouer tout le
     # chargement du fichier. JPEG plutôt que AUTO/PNG : AUTO a gardé des images non
     # compressées et a fait monter lobby.glb à 122 Mo au lieu des 25 Mo visés.
     export_image_format="JPEG",
-    export_jpeg_quality=75,
+    export_jpeg_quality=65,
     export_apply=True,
     use_visible=True,
     export_yup=True,
