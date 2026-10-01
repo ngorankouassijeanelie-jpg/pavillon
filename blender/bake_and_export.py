@@ -10,8 +10,10 @@ Lancer avec :
     /Applications/Blender.app/Contents/MacOS/Blender -b --python blender/bake_and_export.py
 """
 import bpy
+import json
 import math
 import os
+import struct
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BLEND_IN = os.path.join(PROJECT_ROOT, "lobby_stage1.blend")
@@ -203,4 +205,60 @@ size_mb = os.path.getsize(GLB_OUT) / (1024 * 1024)
 print(f"\n== Terminé ==")
 print(f"lobby.glb : {GLB_OUT} ({size_mb:.1f} Mo)")
 if size_mb > 25:
-    print("!! Attention : le fichier dépasse les 25 Mo visés. Réduisez la résolution des textures ou le nombre de meubles importés.")
+    print("!! Attention : le fichier dépasse les 25 Mo visés.")
+
+# ---------------------------------------------------------------- 8) diagnostic : textures vs géométrie dans le .glb final
+# La réduction de résolution des textures n'a pas fait bouger la taille lors des
+# essais précédents (36.9 Mo avant et après) : plutôt que de continuer à deviner,
+# on ouvre le .glb produit et on mesure exactement ce qui pèse.
+
+
+def analyze_glb(path):
+    with open(path, "rb") as f:
+        magic, _version, total_length = struct.unpack("<4sII", f.read(12))
+        if magic != b"glTF":
+            print("!! Fichier glTF binaire invalide, diagnostic impossible.")
+            return
+        json_len, json_type = struct.unpack("<I4s", f.read(8))
+        gltf = json.loads(f.read(json_len))
+        bin_len = 0
+        if f.tell() < total_length:
+            bin_len, _bin_type = struct.unpack("<I4s", f.read(8))
+
+    buffer_views = gltf.get("bufferViews", [])
+    images = gltf.get("images", [])
+    meshes = gltf.get("meshes", [])
+    nodes = gltf.get("nodes", [])
+
+    image_bytes = 0
+    image_report = []
+    for i, img in enumerate(images):
+        bv_idx = img.get("bufferView")
+        if bv_idx is None:
+            continue
+        size = buffer_views[bv_idx].get("byteLength", 0)
+        image_bytes += size
+        image_report.append((img.get("name", f"image_{i}"), size))
+    image_report.sort(key=lambda t: -t[1])
+
+    mesh_users = {}
+    for node in nodes:
+        if "mesh" in node:
+            mesh_users[node["mesh"]] = mesh_users.get(node["mesh"], 0) + 1
+    duplicated_meshes = [(meshes[i].get("name", f"mesh_{i}"), count)
+                          for i, count in mesh_users.items() if count == 1]
+
+    print("\n== Répartition du .glb ==")
+    print(f"Taille totale             : {total_length / 1024 / 1024:.2f} Mo")
+    print(f"Chunk binaire (BIN)       : {bin_len / 1024 / 1024:.2f} Mo")
+    print(f"  dont textures           : {image_bytes / 1024 / 1024:.2f} Mo ({len(images)} images)")
+    print(f"  dont géométrie (reste)  : {(bin_len - image_bytes) / 1024 / 1024:.2f} Mo")
+    print(f"Nombre de meshes uniques  : {len(meshes)} (utilisés par {len(nodes)} objets dans la scène)")
+    print("Top 10 textures les plus lourdes :")
+    for name, size in image_report[:10]:
+        print(f"  {size / 1024:7.0f} Ko  {name}")
+    if not image_report:
+        print("  (aucune, ou aucune texture n'est intégrée dans le binaire)")
+
+
+analyze_glb(GLB_OUT)
