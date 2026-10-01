@@ -159,13 +159,24 @@ os.makedirs(RESIZED_DIR, exist_ok=True)
 
 resized_count = 0
 for img in bpy.data.images:
-    if img.name == bake_image.name or not img.has_data:
+    if img.name == bake_image.name:
         continue
     w, h = img.size
+    if w == 0 or h == 0:
+        continue
     if w <= MAX_TEXTURE_SIZE and h <= MAX_TEXTURE_SIZE:
         continue
     was_packed = img.packed_file is not None
-    print(f"  -> {img.name} : {w}x{h}, filepath={img.filepath!r}, empaquetée avant={was_packed}")
+    # Avant : on sautait toute image avec has_data=False. En mode arrière-plan (-b),
+    # Blender ne charge les pixels d'une texture que si quelque chose l'a réellement
+    # utilisée (rendu, bake) — le bake ici ne touche que les matériaux de
+    # l'architecture, jamais ceux du mobilier. Résultat : has_data valait False pour
+    # TOUTES les textures du mobilier alors que leur taille (2048px) était bien
+    # connue via les métadonnées du fichier, et la boucle les sautait toutes (0
+    # texture réduite dans les essais précédents). scale() force le chargement des
+    # pixels s'il n'a pas déjà eu lieu, donc inutile de les exclure ici.
+    print(f"  -> {img.name} : {w}x{h}, filepath={img.filepath!r}, empaquetée avant={was_packed}, "
+          f"pixels déjà chargés avant={img.has_data}")
     try:
         if was_packed:
             # Le mobilier est importé via import_scene.gltf() : ses textures sont
