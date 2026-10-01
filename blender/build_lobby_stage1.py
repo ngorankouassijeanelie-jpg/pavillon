@@ -239,7 +239,7 @@ mat_terracotta = make_pbr_material("M_Terracotta", "terracotta", base_color=(0.6
 
 mat_glass = simple_material("M_Glass", (0.84, 0.90, 0.94), roughness=0.04, transmission=1.0, alpha=0.2)
 mat_column = simple_material("M_Column", (0.95, 0.94, 0.91), roughness=0.4)
-mat_medallion_navy = simple_material("M_Medallion_Navy", (0.08, 0.15, 0.27), roughness=0.4)
+mat_medallion_navy = simple_material("M_Medallion_Navy", (0.04, 0.07, 0.13), roughness=0.65)
 mat_rug = simple_material("M_Rug", (0.79, 0.71, 0.58), roughness=0.9)
 
 # Claustra en terre cuite ajourée : motif de perforation procédural (losanges)

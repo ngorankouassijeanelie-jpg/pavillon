@@ -170,8 +170,12 @@ NEEDS = {
 # ce sont des HDRI Poly Haven connus de ciel extérieur, fin de journée/coucher de
 # soleil doré, qui conviennent bien à une « vue sur la lagune ».
 PRIORITY_HDRI = [
-    "venice_sunset", "belfast_sunset_puresky", "qwantani_dusk_2",
-    "golden_bay", "evening_road_01", "sunflowers_puresky", "kiara_1_dawn",
+    # "PureSky" = ciel seul, sans décor identifiable ; qwantani/golden_bay sont des
+    # paysages naturels (savane, baie) sans architecture reconnaissable. venice_sunset
+    # est volontairement en dernier : c'est une vraie photo de Venise (bâtiments et
+    # passants reconnaissables), pas adaptée à « vue sur la lagune ».
+    "belfast_sunset_puresky", "sunflowers_puresky", "qwantani_dusk_2",
+    "golden_bay", "kiara_1_dawn", "evening_road_01", "venice_sunset",
 ]
 
 chosen = {}
