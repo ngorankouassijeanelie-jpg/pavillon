@@ -16,7 +16,7 @@ import os
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BLEND_IN = os.path.join(PROJECT_ROOT, "lobby_stage1.blend")
 GLB_OUT = os.path.join(PROJECT_ROOT, "lobby.glb")
-LIGHTMAP_SIZE = 4096
+LIGHTMAP_SIZE = 2048  # 4096 restait sous la limite de la consigne mais pesait lourd ; 2048 suffit largement
 
 bpy.ops.wm.open_mainfile(filepath=BLEND_IN)
 scene = bpy.context.scene
@@ -149,7 +149,19 @@ add_collider_box(6, 1.3, -9, 3, 0, "Reception")
 for cx, cz in ((-13, 9), (13, 9)):
     add_collider_box(1.2, 1.2, cx, cz - 5, 0, f"Table_{cx}")
 
-# ---------------------------------------------------------------- 6) export glTF (Draco + WebP)
+# ---------------------------------------------------------------- 6) réduire les textures pour tenir le budget 25 Mo
+
+MAX_TEXTURE_SIZE = 1024
+for img in bpy.data.images:
+    if img.name == bake_image.name or not img.has_data:
+        continue
+    w, h = img.size
+    if w > MAX_TEXTURE_SIZE or h > MAX_TEXTURE_SIZE:
+        scale = MAX_TEXTURE_SIZE / max(w, h)
+        img.scale(max(1, round(w * scale)), max(1, round(h * scale)))
+        print(f"  texture réduite : {img.name} ({w}x{h} -> {img.size[0]}x{img.size[1]})")
+
+# ---------------------------------------------------------------- 7) export glTF (Draco + JPEG)
 
 desired_kwargs = dict(
     filepath=GLB_OUT,
@@ -161,7 +173,7 @@ desired_kwargs = dict(
     # chargement du fichier. JPEG plutôt que AUTO/PNG : AUTO a gardé des images non
     # compressées et a fait monter lobby.glb à 122 Mo au lieu des 25 Mo visés.
     export_image_format="JPEG",
-    export_jpeg_quality=82,
+    export_jpeg_quality=75,
     export_apply=True,
     use_visible=True,
     export_yup=True,
