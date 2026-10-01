@@ -154,20 +154,34 @@ for cx, cz in ((-13, 9), (13, 9)):
 # ---------------------------------------------------------------- 6) réduire les textures pour tenir le budget 25 Mo
 
 MAX_TEXTURE_SIZE = 768  # 1024 ne suffisait pas (fichier > 30 Mo avec le mobilier Poly Haven) ; 768 tient le budget
+RESIZED_DIR = os.path.join(PROJECT_ROOT, "assets", "_resized_for_export")
+os.makedirs(RESIZED_DIR, exist_ok=True)
+
+resized_count = 0
 for img in bpy.data.images:
     if img.name == bake_image.name or not img.has_data:
         continue
     w, h = img.size
     if w > MAX_TEXTURE_SIZE or h > MAX_TEXTURE_SIZE:
         scale = MAX_TEXTURE_SIZE / max(w, h)
-        img.scale(max(1, round(w * scale)), max(1, round(h * scale)))
-        # Les images du mobilier Poly Haven viennent d'un fichier JPEG non empaqueté
-        # sur le disque : sans pack(), l'exportateur glTF recopiait les octets du
-        # fichier source (toujours en 2K) au lieu de relire le buffer réduit en
-        # mémoire, ce qui annulait silencieusement cette réduction (le fichier
-        # final restait à 36.9 Mo, identique à avant la réduction).
-        img.pack()
-        print(f"  texture réduite : {img.name} ({w}x{h} -> {img.size[0]}x{img.size[1]})")
+        new_w, new_h = max(1, round(w * scale)), max(1, round(h * scale))
+        img.scale(new_w, new_h)
+        # scale() + pack() seuls n'ont eu aucun effet sur la taille exportée (les
+        # textures du mobilier pesaient toujours leur taille 2K d'origine dans le
+        # .glb final, vérifié par le diagnostic ci-dessous : 35.1 Mo de textures
+        # malgré une réduction annoncée à 768px). Au lieu de compter sur le choix
+        # interne de l'exportateur entre pixels en mémoire et fichier source, on
+        # écrit explicitement le résultat réduit dans un vrai fichier JPEG et on
+        # repointe l'image dessus : il n'y a alors plus qu'une seule source possible.
+        out_path = os.path.join(RESIZED_DIR, f"{img.name}.jpg")
+        img.filepath_raw = out_path
+        img.file_format = 'JPEG'
+        img.save()
+        img.source = 'FILE'
+        img.reload()
+        resized_count += 1
+        print(f"  texture réduite : {img.name} ({w}x{h} -> {img.size[0]}x{img.size[1]}) -> {out_path}")
+print(f"{resized_count} texture(s) réduite(s) et réécrite(s) sur le disque.")
 
 # ---------------------------------------------------------------- 7) export glTF (Draco + JPEG)
 
