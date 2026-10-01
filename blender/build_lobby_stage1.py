@@ -355,7 +355,12 @@ def import_gltf_model(need_name):
     if not gltf_path:
         return None
     before = set(bpy.data.objects.keys())
-    bpy.ops.import_scene.gltf(filepath=gltf_path)
+    try:
+        bpy.ops.import_scene.gltf(filepath=gltf_path)
+    except RuntimeError as e:
+        print(f"!! Import glTF échoué pour {need_name} ({gltf_path}) : {e}")
+        print(f"   -> une forme simple sera utilisée à la place.")
+        return None
     new_objs = [bpy.data.objects[n] for n in bpy.data.objects.keys() if n not in before]
     if not new_objs:
         return None
