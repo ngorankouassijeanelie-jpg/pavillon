@@ -107,8 +107,9 @@ models = http_get_json(f"{API}/assets?type=models")
 NEEDS = {
     "hdri_golden_hour": {
         "pool": hdris, "kind": "hdri",
-        "include": ["sunset", "dusk", "golden", "evening", "afternoon"],
-        "exclude": ["night", "indoor", "studio", "overcast", "storm"],
+        "include": ["sunset", "dusk", "golden", "evening", "afternoon", "sky", "nature", "field", "beach", "lake"],
+        "exclude": ["night", "indoor", "studio", "overcast", "storm", "street", "urban", "city", "building",
+                    "alley", "car", "road", "traffic", "interior", "room"],
     },
     "floor_stone": {
         "pool": textures, "kind": "texture",
@@ -162,9 +163,23 @@ NEEDS = {
     },
 }
 
+# Essayés en priorité pour le ciel, avant la recherche générique par mots-clés :
+# ce sont des HDRI Poly Haven connus de ciel extérieur, fin de journée/coucher de
+# soleil doré, qui conviennent bien à une « vue sur la lagune ».
+PRIORITY_HDRI = [
+    "venice_sunset", "belfast_sunset_puresky", "qwantani_dusk_2",
+    "golden_bay", "evening_road_01", "sunflowers_puresky", "kiara_1_dawn",
+]
+
 chosen = {}
 for need_name, spec in NEEDS.items():
-    asset_id = pick_best(spec["pool"], spec["include"], spec["exclude"])
+    asset_id = None
+    if need_name == "hdri_golden_hour":
+        asset_id = next((pid for pid in PRIORITY_HDRI if pid in spec["pool"]), None)
+        if asset_id:
+            print(f"-> {need_name} : {asset_id} trouvé dans la liste prioritaire")
+    if not asset_id:
+        asset_id = pick_best(spec["pool"], spec["include"], spec["exclude"])
     if not asset_id:
         print(f"!! Aucune ressource trouvée pour « {need_name} » (mots-clés {spec['include']}) — à vérifier manuellement sur polyhaven.com")
         continue

@@ -171,12 +171,12 @@ def add_cylinder(r1, r2, h, x, y, z, ry=0.0, mat=None, name="Cyl", collection=No
 
 
 def add_torus(major_r, minor_r, x, y, z, mat=None, name="Torus", collection=None):
+    # Le tore de Blender est déjà créé à plat (axe du trou = Z monde), contrairement
+    # à THREE.TorusGeometry qui a besoin d'une rotation : ici, aucune rotation requise.
     bpy.ops.mesh.primitive_torus_add(major_radius=major_r, minor_radius=minor_r, location=P(x, y, z),
                                       major_segments=96, minor_segments=16)
     obj = bpy.context.object
     obj.name = name
-    obj.rotation_euler = (math.pi / 2, 0, 0)
-    bpy.ops.object.transform_apply(location=False, rotation=True, scale=False)
     if mat:
         obj.data.materials.append(mat)
     if collection:
@@ -408,8 +408,12 @@ if plant_tpl:
 
 
 def fallback_chair(x, y, z, ry):
+    # Le dossier est décalé derrière l'assise, dans la direction opposée à celle
+    # où le fauteuil fait face (vecteur local (0,-0.38) tourné de ry).
+    back_x = x - 0.38 * math.sin(ry)
+    back_z = z - 0.38 * math.cos(ry)
     add_box(0.95, 0.42, 0.9, x, y + 0.21, z, ry=ry, mat=mat_leather, name="Chair_Seat", collection=col_furniture)
-    add_box(0.95, 0.62, 0.16, x, y + 0.6, z - 0.38 * math.cos(ry), ry=ry, mat=mat_leather, name="Chair_Back", collection=col_furniture)
+    add_box(0.95, 0.62, 0.16, back_x, y + 0.6, back_z, ry=ry, mat=mat_leather, name="Chair_Back", collection=col_furniture)
 
 
 def fallback_plant(x, y, z):
