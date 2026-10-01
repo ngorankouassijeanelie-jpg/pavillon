@@ -123,8 +123,11 @@ NEEDS = {
     },
     "brass": {
         "pool": textures, "kind": "texture",
-        "include": ["metal", "brass", "gold", "brushed", "bronze"],
-        "exclude": ["rust", "rusty", "corrugated"],
+        # Pas de simple "metal" ici : trop générique, ça laissait gagner une tôle
+        # bleue ou grise au lieu d'un vrai laiton doré.
+        "include": ["brass", "gold", "bronze"],
+        "exclude": ["rust", "rusty", "corrugated", "blue", "green", "red", "black",
+                    "white", "grey", "gray", "copper", "chrome", "steel", "silver"],
     },
     "leather": {
         "pool": textures, "kind": "texture",
