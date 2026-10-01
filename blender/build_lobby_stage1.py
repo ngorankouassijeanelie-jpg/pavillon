@@ -120,13 +120,17 @@ def make_pbr_material(name, texture_folder_name, base_color=(0.8, 0.8, 0.8, 1), 
     return mat
 
 
-def simple_material(name, color, roughness=0.7, metallic=0.0, alpha=1.0, transmission=0.0):
+def simple_material(name, color, roughness=0.7, metallic=0.0, alpha=1.0, transmission=0.0, specular=0.5):
     mat = bpy.data.materials.new(name)
     mat.use_nodes = True
     bsdf = mat.node_tree.nodes["Principled BSDF"]
     bsdf.inputs["Base Color"].default_value = (*color, 1)
     bsdf.inputs["Roughness"].default_value = roughness
     bsdf.inputs["Metallic"].default_value = metallic
+    for spec_key in ("Specular IOR Level", "Specular"):
+        if spec_key in bsdf.inputs:
+            bsdf.inputs[spec_key].default_value = specular
+            break
     if "Transmission Weight" in bsdf.inputs:
         bsdf.inputs["Transmission Weight"].default_value = transmission
     elif "Transmission" in bsdf.inputs:
@@ -239,7 +243,7 @@ mat_terracotta = make_pbr_material("M_Terracotta", "terracotta", base_color=(0.6
 
 mat_glass = simple_material("M_Glass", (0.84, 0.90, 0.94), roughness=0.04, transmission=1.0, alpha=0.2)
 mat_column = simple_material("M_Column", (0.95, 0.94, 0.91), roughness=0.4)
-mat_medallion_navy = simple_material("M_Medallion_Navy", (0.04, 0.07, 0.13), roughness=0.65)
+mat_medallion_navy = simple_material("M_Medallion_Navy", (0.04, 0.07, 0.13), roughness=0.9, specular=0.1)
 mat_rug = simple_material("M_Rug", (0.79, 0.71, 0.58), roughness=0.9)
 
 # Claustra en terre cuite ajourée : motif de perforation procédural (losanges)
