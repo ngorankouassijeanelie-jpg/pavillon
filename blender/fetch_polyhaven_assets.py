@@ -174,8 +174,8 @@ PRIORITY_HDRI = [
     # paysages naturels (savane, baie) sans architecture reconnaissable. venice_sunset
     # est volontairement en dernier : c'est une vraie photo de Venise (bâtiments et
     # passants reconnaissables), pas adaptée à « vue sur la lagune ».
-    "belfast_sunset_puresky", "sunflowers_puresky", "qwantani_dusk_2",
-    "golden_bay", "kiara_1_dawn", "evening_road_01", "venice_sunset",
+    "qwantani_dusk_2", "golden_bay", "sunflowers_puresky", "kiara_1_dawn",
+    "belfast_sunset_puresky", "evening_road_01", "venice_sunset",
 ]
 
 chosen = {}

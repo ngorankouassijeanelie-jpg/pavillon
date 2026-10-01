@@ -476,8 +476,8 @@ sun_dir_blender = mathutils.Vector(P(SUN_DIR_THREE.x, SUN_DIR_THREE.y, SUN_DIR_T
 bpy.ops.object.light_add(type="SUN", location=sun_dir_blender * 50)
 sun = bpy.context.object
 sun.name = "Sun_GoldenHour"
-sun.data.energy = 3.2
-sun.data.color = (1.0, 0.81, 0.59)
+sun.data.energy = 5.5
+sun.data.color = (1.0, 0.78, 0.52)
 sun.data.angle = math.radians(2.0)  # léger flou de pénombre, soleil bas réaliste
 look_at(sun, (0, 0, 0))
 
