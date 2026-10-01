@@ -282,8 +282,12 @@ for need in MODEL_NEEDS:
         print(f"!! Pas de version glTF pour {pid}, ce meuble sera remplacé par une forme simple.")
         continue
     res_node = gltf_node.get(RESOLUTION) or next(iter(gltf_node.values()), None)
+    if isinstance(res_node, dict) and "url" not in res_node:
+        # Un niveau de plus selon les assets : {resolution: {"gltf": {"url":...}}}
+        res_node = res_node.get("gltf") or next((v for v in res_node.values() if isinstance(v, dict) and "url" in v), None)
     if not isinstance(res_node, dict) or "url" not in res_node:
         print(f"!! Entrée glTF inattendue pour {pid}, ce meuble sera remplacé par une forme simple.")
+        print(f"   structure reçue : {json.dumps(gltf_node, indent=2)[:600]}")
         continue
     main_url = res_node["url"]
     folder = os.path.join(ASSETS_DIR, "models", need)
