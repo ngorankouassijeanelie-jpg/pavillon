@@ -159,6 +159,12 @@ for img in bpy.data.images:
     if w > MAX_TEXTURE_SIZE or h > MAX_TEXTURE_SIZE:
         scale = MAX_TEXTURE_SIZE / max(w, h)
         img.scale(max(1, round(w * scale)), max(1, round(h * scale)))
+        # Les images du mobilier Poly Haven viennent d'un fichier JPEG non empaqueté
+        # sur le disque : sans pack(), l'exportateur glTF recopiait les octets du
+        # fichier source (toujours en 2K) au lieu de relire le buffer réduit en
+        # mémoire, ce qui annulait silencieusement cette réduction (le fichier
+        # final restait à 36.9 Mo, identique à avant la réduction).
+        img.pack()
         print(f"  texture réduite : {img.name} ({w}x{h} -> {img.size[0]}x{img.size[1]})")
 
 # ---------------------------------------------------------------- 7) export glTF (Draco + JPEG)
