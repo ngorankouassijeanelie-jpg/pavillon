@@ -55,7 +55,7 @@ bpy.ops.object.mode_set(mode="EDIT")
 bpy.ops.mesh.select_all(action="SELECT")
 bpy.ops.object.mode_set(mode="OBJECT")
 bpy.ops.uv.lightmap_pack(PREF_CONTEXT="ALL_FACES", PREF_PACK_IN_ONE=True, PREF_NEW_UVLAYER=True,
-                          PREF_APPLY_IMAGE=False, PREF_MARGIN_DIV=0.3)
+                          PREF_MARGIN_DIV=0.3)
 lightmap_uv = lobby_shell.data.uv_layers[-1]
 lightmap_uv.name = "UVLightmap"
 lightmap_uv.active = True
@@ -151,7 +151,7 @@ for cx, cz in ((-13, 9), (13, 9)):
 
 # ---------------------------------------------------------------- 6) export glTF (Draco + WebP)
 
-export_kwargs = dict(
+desired_kwargs = dict(
     filepath=GLB_OUT,
     export_format="GLB",
     export_draco_mesh_compression_enable=True,
@@ -161,12 +161,17 @@ export_kwargs = dict(
     use_visible=True,
     export_yup=True,
 )
-try:
-    bpy.ops.export_scene.gltf(**export_kwargs)
-except TypeError as e:
-    print(f"!! Un paramètre d'export n'existe pas dans cette version de Blender ({e}), nouvelle tentative sans export_image_format=WEBP")
-    export_kwargs.pop("export_image_format", None)
-    bpy.ops.export_scene.gltf(**export_kwargs)
+# Les noms de paramètres de l'exporteur glTF changent d'une version de Blender à
+# l'autre : on ne garde que ceux que cette version reconnaît réellement, au lieu
+# de deviner et de recommencer à chaque erreur.
+valid_props = set(bpy.ops.export_scene.gltf.get_rna_type().properties.keys())
+export_kwargs = {}
+for key, value in desired_kwargs.items():
+    if key in valid_props:
+        export_kwargs[key] = value
+    else:
+        print(f"!! Option d'export ignorée (absente de cette version de Blender) : {key}")
+bpy.ops.export_scene.gltf(**export_kwargs)
 
 size_mb = os.path.getsize(GLB_OUT) / (1024 * 1024)
 print(f"\n== Terminé ==")
