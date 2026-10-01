@@ -17,6 +17,7 @@ import json
 import os
 import sys
 import urllib.request
+import urllib.parse
 import zipfile
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -223,23 +224,64 @@ for need in TEXTURE_NEEDS:
             ext = os.path.splitext(url)[1]
             download(url, os.path.join(folder, f"{map_name}{ext}"))
 
-# Modèles (fauteuil, table basse, lampe, plante) — au format glTF
+def patch_missing_gltf_resources(gltf_path, base_url):
+    """Un .gltf référence son .bin et ses textures en fichiers séparés
+    (contrairement au .glb autonome). On relit le .gltf téléchargé et on va
+    chercher, à côté de son URL d'origine, tout fichier référencé qui manque
+    encore localement."""
+    try:
+        with open(gltf_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception as e:
+        print(f"  !! Impossible de relire {gltf_path} : {e}")
+        return
+    folder = os.path.dirname(gltf_path)
+    uris = [b["uri"] for b in data.get("buffers", []) if "uri" in b]
+    uris += [i["uri"] for i in data.get("images", []) if "uri" in i]
+    for uri in uris:
+        if uri.startswith("data:"):
+            continue
+        rel = urllib.parse.unquote(uri)
+        local_path = os.path.join(folder, rel)
+        if os.path.exists(local_path) and os.path.getsize(local_path) > 0:
+            continue
+        file_url = urllib.parse.urljoin(base_url, uri)
+        try:
+            download(file_url, local_path)
+        except Exception as e:
+            print(f"  !! Ressource manquante introuvable ({rel}) : {e}")
+
+
+# Modèles (fauteuil, table basse, lampe, plante) — au format glTF.
+# Les modèles glTF de Poly Haven sont livrés en plusieurs fichiers (le
+# .gltf lui-même, un .bin, et les textures) : le JSON /files/{id} liste les
+# fichiers additionnels sous une clé "include" à côté du fichier principal.
 MODEL_NEEDS = ["model_armchair", "model_coffee_table", "model_lamp", "model_plant"]
 for need in MODEL_NEEDS:
     if need not in chosen:
         continue
     pid = chosen[need]["id"]
     files_json = http_get_json(f"{API}/files/{pid}")
-    url = get_map_url(files_json, ["gltf"], prefer_formats=("gltf", "zip"))
-    if not url:
+    gltf_node = files_json.get("gltf")
+    if not gltf_node:
         print(f"!! Pas de version glTF pour {pid}, ce meuble sera remplacé par une forme simple.")
         continue
+    res_node = gltf_node.get(RESOLUTION) or next(iter(gltf_node.values()), None)
+    if not isinstance(res_node, dict) or "url" not in res_node:
+        print(f"!! Entrée glTF inattendue pour {pid}, ce meuble sera remplacé par une forme simple.")
+        continue
+    main_url = res_node["url"]
     folder = os.path.join(ASSETS_DIR, "models", need)
-    ext = os.path.splitext(url)[1]
-    dest = os.path.join(folder, f"model{ext}")
-    download(url, dest)
-    if ext == ".zip":
-        with zipfile.ZipFile(dest) as z:
+    main_name = os.path.basename(urllib.parse.urlparse(main_url).path) or "model.gltf"
+    main_dest = os.path.join(folder, main_name)
+    download(main_url, main_dest)
+    for rel_path, info in (res_node.get("include") or {}).items():
+        if isinstance(info, dict) and "url" in info:
+            download(info["url"], os.path.join(folder, rel_path))
+    if main_dest.endswith(".gltf"):
+        patch_missing_gltf_resources(main_dest, main_url)
+    elif main_dest.endswith(".zip"):
+        with zipfile.ZipFile(main_dest) as z:
             z.extractall(folder)
         print(f"  décompressé dans {folder}")
 
