@@ -107,9 +107,10 @@ models = http_get_json(f"{API}/assets?type=models")
 NEEDS = {
     "hdri_golden_hour": {
         "pool": hdris, "kind": "hdri",
+        # Le réalisme visuel prime sur le thème : un décor urbain ou des passants
+        # dans le ciel ne posent pas de problème, seul le rendu doré/lumineux compte.
         "include": ["sunset", "dusk", "golden", "evening", "afternoon", "sky", "nature", "field", "beach", "lake"],
-        "exclude": ["night", "indoor", "studio", "overcast", "storm", "street", "urban", "city", "building",
-                    "alley", "car", "road", "traffic", "interior", "room"],
+        "exclude": ["night", "indoor", "studio", "overcast", "storm"],
     },
     "floor_stone": {
         "pool": textures, "kind": "texture",
@@ -170,12 +171,10 @@ NEEDS = {
 # ce sont des HDRI Poly Haven connus de ciel extérieur, fin de journée/coucher de
 # soleil doré, qui conviennent bien à une « vue sur la lagune ».
 PRIORITY_HDRI = [
-    # "PureSky" = ciel seul, sans décor identifiable ; qwantani/golden_bay sont des
-    # paysages naturels (savane, baie) sans architecture reconnaissable. venice_sunset
-    # est volontairement en dernier : c'est une vraie photo de Venise (bâtiments et
-    # passants reconnaissables), pas adaptée à « vue sur la lagune ».
-    "qwantani_dusk_2", "golden_bay", "sunflowers_puresky", "kiara_1_dawn",
-    "belfast_sunset_puresky", "evening_road_01", "venice_sunset",
+    # venice_sunset a donné le rendu le plus réaliste et le plus doré lors des essais :
+    # priorité au rendu visuel, peu importe que des bâtiments ou des passants soient visibles.
+    "venice_sunset", "qwantani_dusk_2", "golden_bay", "sunflowers_puresky",
+    "kiara_1_dawn", "evening_road_01", "belfast_sunset_puresky",
 ]
 
 chosen = {}
