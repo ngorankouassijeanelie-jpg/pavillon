@@ -156,10 +156,12 @@ desired_kwargs = dict(
     export_format="GLB",
     export_draco_mesh_compression_enable=True,
     export_draco_mesh_compression_level=6,
-    # AUTO (JPEG/PNG selon la texture d'origine) plutôt que WEBP : le GLTFLoader
-    # de Three.js r128 (version utilisée par pavillon.html) ne sait pas décoder
-    # l'extension EXT_texture_webp et fait échouer tout le chargement du fichier.
-    export_image_format="AUTO",
+    # JPEG plutôt que WEBP : le GLTFLoader de Three.js r128 (version utilisée par
+    # pavillon.html) ne sait pas décoder EXT_texture_webp et fait échouer tout le
+    # chargement du fichier. JPEG plutôt que AUTO/PNG : AUTO a gardé des images non
+    # compressées et a fait monter lobby.glb à 122 Mo au lieu des 25 Mo visés.
+    export_image_format="JPEG",
+    export_jpeg_quality=82,
     export_apply=True,
     use_visible=True,
     export_yup=True,
